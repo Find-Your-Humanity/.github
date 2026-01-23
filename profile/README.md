@@ -1,4 +1,239 @@
-# 카카오클라우드 기반 SaaS형 캡차 서비스 아키텍처
+# 카카오클라우드 및 AI 기반 SaaS형 캡차 서비스 아키텍처
+
+카카오 클라우드 오브젝트 스토리지, AI 모델(AutoEncoder, YOLO, CRNN), MongoDB, MySQL, Redis를 결합한 고성능 캡차 솔루션입니다.  
+모노레포 구조로 프론트엔드, 백엔드, ML 서비스 및 인프라 설정을 통합 관리합니다.
+
+## 📁 Repository Structure
+
+###  프론트엔드 서비스
+- **`website/`**: 프로젝트 랜딩 페이지 및 통합 대시보드 (React + Vite)
+  - 메인 홈페이지, 제품 소개, 회사 정보, 문서
+  - 로그인/회원가입 (Google OAuth 지원)
+  - 네이티브 통합 대시보드 (사용자/관리자)
+  - 결제 시스템 (토스페이먼츠 연동)
+  - 기술 스택: React 18, React Router, Material-UI, Chart.js, Axios
+
+- **`dashboard/`**: API 키 및 통계 관리 대시보드 (React + TypeScript)
+  - API 키 생성 및 관리
+  - 실시간 통계 및 분석 (Recharts)
+  - 사용량 모니터링 및 요금 관리
+  - 기술 스택: React 18, TypeScript, Material-UI, Recharts
+
+- **`captcha-widget/`**: 웹사이트 임베딩용 캡차 위젯 (React + TypeScript)
+  - CDN 배포 가능한 독립 실행형 위젯
+  - 다양한 캡차 유형 지원 (손글씨, 추상 이미지, 이미지 그리드)
+  - 행동 데이터 수집 및 전송
+  - 기술 스택: React 18, TypeScript, Webpack
+
+###  백엔드 서비스
+- **`gateway-api/`**: 메인 서비스 엔트리 포인트 (FastAPI + Python)
+  - 사용자 인증 및 권한 관리 (JWT, Google OAuth)
+  - API 키 발급 및 검증
+  - 결제 및 구독 관리
+  - 대시보드 API (사용자/관리자)
+  - 사용량 추적 및 통계
+  - 기술 스택: FastAPI, PyMySQL, Python-JOSE, Passlib, HTTPx
+
+- **`captcha-api/`**: 캡차 로직 및 검증 (FastAPI + Python)
+  - 다양한 캡차 유형 생성 및 검증
+    - Handwriting (손글씨 OCR)
+    - Abstract (추상 이미지 선택)
+    - ImageGrid (이미지 그리드 선택)
+  - 세션 관리 (Redis + In-Memory)
+  - 행동 데이터 수집 및 저장 (MongoDB)
+  - 카카오 오브젝트 스토리지 연동 (Presigned URL)
+  - IP 관리 및 제한
+  - 기술 스택: FastAPI, Redis, PyMongo, Boto3, Pillow, PyMySQL
+
+- **`ml-service/`**: AI 기반 봇 탐지 및 이미지 처리 (FastAPI + Python)
+  - **AutoEncoder 기반 봇 탐지**: 사용자 행동 패턴 분석
+  - **CRNN OCR**: 손글씨 텍스트 인식 (PyTorch)
+  - **YOLO v8**: 객체 탐지 및 세그멘테이션
+  - **Keras 이미지 분류**: 추상 이미지 감정 분석
+  - 실시간 신뢰도 스코어링 (0-100)
+  - 기술 스택: PyTorch, TensorFlow/Keras, Ultralytics YOLO, scikit-learn
+
+###  인프라 및 배포
+- **`deploy-manifests/`**: Kubernetes 배포 매니페스트
+  - Argo CD 기반 GitOps
+  - 서비스별 Deployment, Service, Ingress 설정
+  - Autoscaling (HPA) 설정
+  - 환경별 설정 (development, production)
+
+##  기술 스택 상세
+
+### 프론트엔드
+| 서비스 | 언어/프레임워크 | 주요 라이브러리 |
+|--------|-----------------|----------------|
+| website | React 18 + Vite | React Router, Material-UI, Chart.js, Axios, 토스페이먼츠 |
+| dashboard | React 18 + TypeScript | Material-UI, Recharts, Axios, React Router |
+| captcha-widget | React 18 + TypeScript | Webpack, Buffer Polyfills |
+
+### 백엔드
+| 서비스 | 언어/프레임워크 | 데이터베이스 | 주요 기능 |
+|--------|-----------------|-------------|----------|
+| gateway-api | FastAPI + Python | MySQL | 인증, API 키, 결제, 대시보드 |
+| captcha-api | FastAPI + Python | Redis, MongoDB, MySQL | 캡차 생성/검증, 세션 관리 |
+| ml-service | FastAPI + Python | - | 봇 탐지, OCR, 객체 탐지, 이미지 분류 |
+
+### AI/ML 모델
+| 모델 | 용도 | 프레임워크 | 정확도/성능 |
+|------|-----|-----------|----------|
+| AutoEncoder | 봇 탐지 및 행동 분석 | PyTorch | 신뢰도 스코어 0-100 |
+| CRNN | 손글씨 OCR | PyTorch + CTC Decoder | 제약 디코딩 지원 |
+| YOLO v8 | 객체 탐지 | Ultralytics | Conf 0.25, IoU 0.45 |
+| Keras CNN | 추상 이미지 분류 | TensorFlow/Keras | 224x224 입력 |
+
+### 인프라
+- **컨테이너**: Docker, Kubernetes
+- **CI/CD**: GitHub Actions, Argo CD
+- **스토리지**: 카카오 오브젝트 스토리지 (S3 호환)
+- **캐시/세션**: Redis
+- **문서 DB**: MongoDB
+- **관계형 DB**: MySQL (PyMySQL)
+
+##  빠른 시작
+
+### 사전 요구사항
+- Docker & Docker Compose
+- Node.js 18+ (프론트엔드)
+- Python 3.9+ (백엔드)
+- MySQL 8.0+
+- Redis 5.0+
+- MongoDB 4.4+
+
+### 로컬 개발 환경 설정
+
+#### 1. 프론트엔드 서비스 실행
+
+```powershell
+# Website (랜딩 페이지 + 통합 대시보드)
+cd website
+npm install
+npm run dev  # http://localhost:5173
+
+# Dashboard (독립 대시보드)
+cd dashboard
+npm install
+npm start  # http://localhost:3000
+
+# Captcha Widget (위젯)
+cd captcha-widget
+npm install
+npm run build:cdn  # CDN 빌드
+```
+
+#### 2. 백엔드 서비스 실행
+
+```powershell
+# Gateway API (메인 엔트리포인트)
+cd gateway-api
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# Captcha API (캡차 로직)
+cd captcha-api
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8001
+
+# ML Service (AI 모델)
+cd ml-service
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn src.api.app:app --reload --port 8002
+```
+
+#### 3. 환경 변수 설정
+
+각 서비스의 `.env` 파일을 설정합니다:
+
+**gateway-api/.env**
+```bash
+DATABASE_URL=mysql+pymysql://user:password@localhost:3306/captcha_db
+SECRET_KEY=your-secret-key
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+**captcha-api/.env**
+```bash
+REDIS_HOST=localhost
+REDIS_PORT=6379
+MONGO_URI=mongodb://localhost:27017
+OBJECT_STORAGE_ENDPOINT=https://objectstorage.kr-central-2.kakaoi.io
+OBJECT_STORAGE_BUCKET=your-bucket
+OBJECT_STORAGE_ACCESS_KEY=your-access-key
+OBJECT_STORAGE_SECRET_KEY=your-secret-key
+```
+
+**ml-service/.env**
+```bash
+OCR_MODEL_PATH=/path/to/crnn_model.pth
+YOLO_IMG_SIZE=768
+YOLO_CONF=0.25
+```
+
+##  주요 기능
+
+### 캡차 유형
+1. **Handwriting (손글씨 OCR)**
+   - CRNN 기반 손글씨 인식
+   - 제약 디코딩 (Constrained Decoding)
+   - 동적 단어 사전 지원
+
+2. **Abstract (추상 이미지 선택)**
+   - Keras CNN 기반 감정 분류
+   - 5장 이미지 중 정답 선택
+   - 카카오 오브젝트 스토리지 연동
+
+3. **ImageGrid (이미지 그리드 선택)**
+   - YOLO v8 기반 객체 탐지
+   - 3x3 그리드에서 객체 포함 이미지 선택
+   - 동적 난이도 조절
+
+### 봇 탐지 시스템
+- **AutoEncoder 기반 행동 분석**
+  - 마우스 움직임, 클릭 패턴, 타이밍 분석
+  - 실시간 재구성 오차 계산
+  - 신뢰도 스코어 (0-100) 반환
+- **적응형 난이도 조절**
+  - 낮은 신뢰도 → 어려운 캡차
+  - 높은 신뢰도 → 간단한 캡차
+
+### 관리 기능
+- **API 키 관리**: 생성, 조회, 비활성화
+- **사용량 추적**: 실시간 통계 및 차트
+- **결제 시스템**: 토스페이먼츠 연동
+- **사용자 관리**: 권한 관리 (일반/관리자)
+
+##  보안 기능
+
+- JWT 기반 인증
+- API 키 기반 요청 검증
+- Rate Limiting (요청 제한)
+- IP 블랙리스트/화이트리스트
+- HTTPS 통신
+- CORS 정책
+- Presigned URL (시간 제한 이미지 액세스)
+
+##  모니터링 및 로깅
+
+### 로그 시스템
+- 구조화된 로그 (JSON)
+- 레벨별 로그 (DEBUG, INFO, WARNING, ERROR)
+- 요청/응답 로깅 미들웨어
+- 성능 메트릭 (응답 시간)
+
+### 통계 및 분석
+- 일일 API 사용량 집계
+- 에러 통계 집계
+- 엔드포인트별 사용량
+- 실시간 대시보드
 
 이 문서는 카카오클라우드를 기반으로 구축될 SaaS형 캡차 서비스의 클라우드 아키텍처를 상세히 설명합니다. 서비스의 초기 트래픽 예측부터 각 컴포넌트의 역할, 보안, CI/CD 전략까지 포괄적으로 다룹니다.
 
